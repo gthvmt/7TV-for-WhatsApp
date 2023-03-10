@@ -1,0 +1,27 @@
+{
+  "name": "seventv_for_whatsapp",
+  // "remoteUser": "developer",
+  "build": {
+    "dockerfile": "Containerfile",
+    "args": {
+      "VARIANT": "bullseye",
+      "BUILDKIT_INLINE_CACHE": "0"
+    }
+  },
+  "privileged": true,
+  "mounts": [
+    { "source": "/dev/bus/usb", "target": "/dev/bus/usb", "type": "bind" }
+  ],
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/root/workspace,type=bind,consistency=delegated",
+  "workspaceFolder": "/home/root/workspace",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+		"Dart-code.dart-code",
+		"Dart-Code.flutter",
+		"rust-lang.rust-analyzer",
+		"skellock.just"
+	]
+    }
+  }
+}

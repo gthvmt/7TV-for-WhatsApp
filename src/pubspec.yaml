@@ -62,7 +62,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
-  ffigen: ^7.2.4
+  ffigen: ^7.2.7
   build_runner: ^2.3.3
   freezed: ^2.3.2
   flutter_launcher_icons: ^0.12.0
