@@ -1,0 +1,3 @@
+[submodule "path_to_submodule"] 
+  path = src/plugins/whatsapp_stickers_handler
+  url = https://github.com/jigneshpandav/whatsapp_stickers_handler.git
