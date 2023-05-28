@@ -1,0 +1,18 @@
+branches:
+  - master
+plugins:
+  - 'semantic-release-gitmoji'
+  - - 'semantic-release-flutter-plugin'
+    - pubspecPath: 'src/pubspec.yaml'
+  - - "@semantic-release/git"
+    - assets:
+      - src/pubspec.yaml
+      message: |-
+        :bookmark: ${nextRelease.version} [no ci]
+
+        ${nextRelease.notes}
+  - - '@semantic-release/github'
+    - assets:
+      - path: "src/build/app/outputs/flutter-apk/app-release.apk"
+        label: "7TV4WA"
+repositoryUrl: 'https://github.com/gthvmt/7TV-for-WhatsApp'

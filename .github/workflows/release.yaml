@@ -1,0 +1,32 @@
+name: Release
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    name: Create release
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/gthvmt/7tv4wa-dev
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.TOKEN }}
+      env:
+        GITHUB_TOKEN: ${{secrets.TOKEN}}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+          token: ${{secrets.TOKEN}}
+      - name: Build apk
+        run: chmod +x .github/workflows/*.sh && .github/workflows/build.sh
+      - name: Publish release
+        run: git config --global --add safe.directory '*' && .github/workflows/publish.sh
