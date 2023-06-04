@@ -23,9 +23,4 @@ build:
   cd rust; cargo ndk --platform 24 -t armeabi-v7a -t arm64-v8a -o ../android/app/src/main/jniLibs build --release
   flutter build apk
 
-debug:
-  #!{{shebang}}
-  cd src
-  flutter watch
-
 rebuild: clean build
