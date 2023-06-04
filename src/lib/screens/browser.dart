@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:seventv_for_whatsapp/models/settings.dart';
 import 'package:seventv_for_whatsapp/models/seventv.dart';
 import 'package:seventv_for_whatsapp/screens/stickerpacks.dart';
 import 'package:seventv_for_whatsapp/services/notification_service.dart';
@@ -201,57 +202,66 @@ class _BrowserState extends State<Browser> {
 
   Future<StickerPack?> _emoteToStickerPack(
       Emote emote, List<String> emojis) async {
-    var publisherController = TextEditingController(text: '7TV for WhatsApp');
-    var nameController = TextEditingController(text: emote.name);
-    return showDialog(
-        context: context,
-        builder: (dialogContext) {
-          return Dialog(
-            child: SingleChildScrollView(
-                child: Container(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        TextField(
-                          controller: nameController,
-                          autofocus: true,
-                          decoration: const InputDecoration(
-                              border: OutlineInputBorder(), labelText: 'Name'),
-                        ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: publisherController,
-                          decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              labelText: 'Publisher'),
-                        ),
-                        const SizedBox(height: 5),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton(
-                              onPressed: () async {
-                                var stickerPack = StickerPack.withDefaults(
-                                    nameController.text,
-                                    publisherController.text);
-                                await stickerPack.save();
-                                debugPrint('created sticker pack');
-                                if (mounted) {
-                                  Navigator.pop(dialogContext, stickerPack);
-                                }
-                                var sticker =
-                                    await _emoteToSticker(emote, emojis);
-                                stickerPack.addSticker(sticker);
-                                stickerPack.isAnimated = sticker.isAnimated;
-                                await stickerPack.save();
-                                debugPrint(
-                                    'added sticker to pack - isAnimated: ${sticker.isAnimated}');
-                              },
-                              child: const Text('Create Sticker Pack')),
-                        )
-                      ],
-                    ))),
-          );
-        });
+    final settings = await SettingsManager.load();
+    final publisherController =
+        TextEditingController(text: settings.defaultPublisher);
+    final nameController = TextEditingController(text: emote.name);
+    if (context.mounted) {
+      return showDialog(
+          context: context,
+          builder: (dialogContext) {
+            return Dialog(
+              child: SingleChildScrollView(
+                  child: Container(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          TextField(
+                            controller: nameController,
+                            autofocus: true,
+                            decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: 'Name'),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: publisherController,
+                            decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: 'Publisher'),
+                          ),
+                          const SizedBox(height: 5),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                                onPressed: () async {
+                                  var stickerPack = StickerPack.withDefaults(
+                                      nameController.text,
+                                      publisherController.text);
+                                  SettingsManager.save(settings
+                                    ..defaultPublisher =
+                                        publisherController.text);
+                                  await stickerPack.save();
+                                  debugPrint('created sticker pack');
+                                  if (mounted) {
+                                    Navigator.pop(dialogContext, stickerPack);
+                                  }
+                                  var sticker =
+                                      await _emoteToSticker(emote, emojis);
+                                  stickerPack.addSticker(sticker);
+                                  stickerPack.isAnimated = sticker.isAnimated;
+                                  await stickerPack.save();
+                                  debugPrint(
+                                      'added sticker to pack - isAnimated: ${sticker.isAnimated}');
+                                },
+                                child: const Text('Create Sticker Pack')),
+                          )
+                        ],
+                      ))),
+            );
+          });
+    }
+    return null;
   }
 
   Future<Sticker> _emoteToSticker(Emote emote, List<String> emojis) async {
