@@ -4,7 +4,8 @@ import 'package:seventv_for_whatsapp/models/seventv.dart';
 
 class EmoteEmojiAction {
   final String text;
-  final void Function(BuildContext context, Emote emote, List<String> emojis) execute;
+  final void Function(BuildContext context, Emote emote, List<String> emojis)
+      execute;
 
   EmoteEmojiAction(this.text, this.execute);
 }
@@ -24,7 +25,7 @@ class _EmoteEmojiPickerState extends State<EmoteEmojiPicker> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: Colors.black.withOpacity(0.64),
+        backgroundColor: Colors.black54,
         body: Column(
           children: [
             const Spacer(),
@@ -32,7 +33,11 @@ class _EmoteEmojiPickerState extends State<EmoteEmojiPicker> {
               margin: const EdgeInsets.symmetric(horizontal: 40),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                  color: Theme.of(context).backgroundColor, borderRadius: const BorderRadius.all(Radius.circular(20))),
+                  color: ElevationOverlay.applySurfaceTint(
+                      Theme.of(context).dialogBackgroundColor,
+                      Theme.of(context).colorScheme.surfaceTint,
+                      6.0),
+                  borderRadius: const BorderRadius.all(Radius.circular(28))),
               child: Column(
                 children: [
                   Container(
@@ -56,12 +61,16 @@ class _EmoteEmojiPickerState extends State<EmoteEmojiPicker> {
                   )),
                   if (selectedEmojis.isNotEmpty) ...[
                     for (final action in widget.actions)
-                      OutlinedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            action.execute(context, widget.emote, selectedEmojis);
-                          },
-                          child: Text(action.text))
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              action.execute(
+                                  context, widget.emote, selectedEmojis);
+                            },
+                            child: Text(action.text)),
+                      )
                   ]
                 ],
               ),
@@ -71,7 +80,8 @@ class _EmoteEmojiPickerState extends State<EmoteEmojiPicker> {
               height: 300,
               child: EmojiPicker(
                 onEmojiSelected: (_, emoji) => setState(() {
-                  if (selectedEmojis.length < 3 && !selectedEmojis.contains(emoji.emoji)) {
+                  if (selectedEmojis.length < 3 &&
+                      !selectedEmojis.contains(emoji.emoji)) {
                     selectedEmojis.add(emoji.emoji);
                   }
                 }),
@@ -80,6 +90,15 @@ class _EmoteEmojiPickerState extends State<EmoteEmojiPicker> {
                     setState(() => selectedEmojis.removeLast());
                   }
                 },
+                config: Config(
+                  bgColor: Theme.of(context).colorScheme.background,
+                  skinToneDialogBgColor: Theme.of(context).colorScheme.background,
+                  indicatorColor: Theme.of(context).colorScheme.primary,
+                  iconColor: Theme.of(context).disabledColor,
+                  iconColorSelected: Theme.of(context).colorScheme.primary,
+                  backspaceColor: Theme.of(context).colorScheme.primary,
+                  // Set other colors and properties as needed
+                ),
               ),
             )
           ],
