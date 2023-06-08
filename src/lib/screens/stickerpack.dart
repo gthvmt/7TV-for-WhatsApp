@@ -26,7 +26,8 @@ class _StickerPackState extends State<StickerPack> {
   @override
   void initState() {
     super.initState();
-    debugPrint('Stickers in stickerpack "${widget.stickerPack.name}" (${widget.stickerPack.identifier}):');
+    debugPrint(
+        'Stickers in stickerpack "${widget.stickerPack.name}" (${widget.stickerPack.identifier}):');
     for (var sticker in widget.stickerPack.stickers) {
       debugPrint(jsonEncode(sticker.toJson()));
     }
@@ -40,10 +41,12 @@ class _StickerPackState extends State<StickerPack> {
                 content: const Text(
                     'Deleting this sticker pack will remove all the stickers associated with it. Do you want to proceed?'),
                 actions: [
-                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                  TextButton(
+                      onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
                   TextButton(
                       onPressed: () => Navigator.pop(ctx, true),
-                      child: Text('Delete', style: TextStyle(color: Theme.of(ctx).colorScheme.error)))
+                      child:
+                          Text('Delete', style: TextStyle(color: Theme.of(ctx).colorScheme.error)))
                 ]));
     if (!(delete ?? false)) {
       return false;
@@ -68,7 +71,8 @@ class _StickerPackState extends State<StickerPack> {
           SliverGrid(
             gridDelegate: StickerPack.gridDelegate,
             delegate: SliverChildListDelegate([
-              for (final sticker in widget.stickerPack.stickers) Image.file(File(sticker.imagePath)),
+              for (final sticker in widget.stickerPack.stickers)
+                Image.file(File(sticker.imagePath)),
               // Stack(
               //   children: [
               //   ],

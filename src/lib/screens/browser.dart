@@ -34,6 +34,7 @@ class _BrowserState extends State<Browser> {
   bool _isSearchMode = false;
   bool _isLoading = false;
   StreamIterator<Stream<Emote>>? _emoteStream;
+  bool _moreAvailable = true;
 
   static const _gridDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
     maxCrossAxisExtent: 150.0,
@@ -49,54 +50,56 @@ class _BrowserState extends State<Browser> {
     _notificationService.initialize();
     _scrollController.addListener(() async {
       if (_scrollController.offset == _scrollController.position.maxScrollExtent) {
-        await loadAdditional();
+        await getEmotes();
       }
     });
     loadTrending();
   }
 
-  Future loadAdditional() async {
-    var stream = _emoteStream;
-    if (stream != null) {
-      debugPrint('loading more emotes');
-      if (await stream.moveNext()) {
-        await for (final emote in _emoteStream!.current) {
-          setState(() => _loadedEmotes.add(emote));
-        }
-      }
-    }
-  }
-
   Future loadTrending() async {
     setState(() {
       _isLoading = true;
+      _moreAvailable = true;
       _loadedEmotes.clear();
     });
     _emoteStream = StreamIterator(_api.getTrending(_chunkSize));
-    if (await _emoteStream!.moveNext()) {
-      if (_isLoading) {
-        setState(() => _isLoading = false);
-      }
-      await for (final emote in _emoteStream!.current) {
-        setState(() => _loadedEmotes.add(emote));
-      }
-    }
+    await getEmotes();
   }
 
   Future search(searchText) async {
     setState(() {
       _isLoading = true;
+      _moreAvailable = true;
       _loadedEmotes.clear();
     });
     _emoteStream = StreamIterator(_api.search(searchText, _chunkSize));
-    if (await _emoteStream!.moveNext()) {
-      if (_isLoading) {
-        setState(() => _isLoading = false);
-      }
-      await for (final emote in _emoteStream!.current) {
-        // log('got emote ${emote.name} - url is ${emote.host!.getUrl(emote.host!.files!.where((f) => f.format == Format.avif).reduce((a, b) => a.height > b.height ? a : b))}');
-        setState(() => _loadedEmotes.add(emote));
-      }
+    await getEmotes();
+  }
+
+  Future getEmotes() async {
+    if (!_moreAvailable) {
+      return;
+    }
+    var stream = _emoteStream;
+    if (stream != null) {
+      debugPrint('loading more emotes');
+      try {
+        int fetchedEmoteCount = 0;
+        final streamIsExhausted = !(await stream.moveNext());
+        if (_isLoading) {
+          setState(() => _isLoading = false);
+        }
+        if (!streamIsExhausted) {
+          await for (final emote in stream.current) {
+            fetchedEmoteCount++;
+            setState(() => _loadedEmotes.add(emote));
+          }
+        }
+        if (fetchedEmoteCount < _chunkSize || streamIsExhausted) {
+          debugPrint('stream is exhausted');
+          setState(() => _moreAvailable = false);
+        }
+      } catch (_) {}
     }
   }
 
@@ -292,13 +295,14 @@ class _BrowserState extends State<Browser> {
                               )
                           ]),
                         ),
-                        SliverList(
-                            delegate: SliverChildListDelegate([
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 20),
-                            child: Center(child: CircularProgressIndicator()),
-                          )
-                        ]))
+                        if (_moreAvailable)
+                          SliverList(
+                              delegate: SliverChildListDelegate([
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20),
+                              child: Center(child: CircularProgressIndicator()),
+                            )
+                          ]))
                       ],
                     ),
         ),

@@ -45,6 +45,8 @@ class SevenTv {
   final _url = Uri.parse('https://7tv.io/v3/gql');
   final _client = HttpClient();
 
+  // TODO: refactor the request creation into a seperate method to reduce code redundancy
+
   Stream<Stream<Emote>> getTrending(int chunkSize) async* {
     var currentPage = 1;
     final variables = {
@@ -62,17 +64,18 @@ class SevenTv {
         'aspect_ratio': ''
       }
     };
-    //TODO: figure out a way to break the loop
-    //we do get the emote count in the response, maybe figure out a way to read the stream until the count
-    //and return the transformed stream after. Then break once all emotes should have been loaded
-    //(currentPage*chunkSize >= emoteCount)
-    while (true) {
+    int countCollected = 0;
+    int countTotal = -1;
+    while (countTotal < 0 || countTotal > countCollected) {
       variables['page'] = currentPage;
       final req = await _client.postUrl(_url);
       req.headers.add(HttpHeaders.contentTypeHeader, ContentType.json.mimeType);
       req.write(jsonEncode({'query': _searchEmotesQuery, 'variables': variables}));
       final resp = await req.close();
-      yield resp.transform(utf8.decoder).transform(EmoteTransformer());
+      final transformer = EmoteTransformer();
+      yield resp.transform(utf8.decoder).transform(transformer);
+      countTotal = transformer.countTotal;
+      countCollected += transformer.countCollected;
       currentPage++;
     }
   }
@@ -94,17 +97,18 @@ class SevenTv {
         'aspect_ratio': ''
       }
     };
-    //TODO: figure out a way to break the loop
-    //we do get the emote count in the response, maybe figure out a way to read the stream until the count
-    //and return the transformed stream after. Then break once all emotes should have been loaded
-    //(currentPage*chunkSize >= emoteCount)
-    while (true) {
+    int countCollected = 0;
+    int countTotal = -1;
+    while (countTotal < 0 || countTotal > countCollected) {
       variables['page'] = currentPage;
       final req = await _client.postUrl(_url);
       req.headers.add(HttpHeaders.contentTypeHeader, ContentType.json.mimeType);
       req.write(jsonEncode({'query': _searchEmotesQuery, 'variables': variables}));
       final resp = await req.close();
-      yield resp.transform(utf8.decoder).transform(EmoteTransformer());
+      final transformer = EmoteTransformer();
+      yield resp.transform(utf8.decoder).transform(transformer);
+      countTotal = transformer.countTotal;
+      countCollected += transformer.countCollected;
       currentPage++;
     }
   }
@@ -112,7 +116,12 @@ class SevenTv {
 
 class EmoteTransformer implements StreamTransformer<String, Emote> {
   final StreamController<Emote> _controller = StreamController();
+  int countCollected = 0;
+  int countTotal = -1;
   String _buffer = '';
+  String _countBuffer = '';
+  bool _collectCount = false;
+
   int _currentDepth = 0;
   bool _inStrVal = false;
   int _itemsArrayDepth = -1;
@@ -126,10 +135,20 @@ class EmoteTransformer implements StreamTransformer<String, Emote> {
   Future onListen(String chunk) async {
     for (final c in chunk.split('')) {
       _buffer += c;
+      if (_collectCount) {
+        if (c == ',') {
+          countTotal = int.parse(_countBuffer);
+          _collectCount = false;
+        } else if (c != ' ') {
+          _countBuffer += c;
+        }
+      }
       if (c == '"') {
         _inStrVal = !_inStrVal;
       } else if (!_inStrVal) {
-        if (c == '{' || c == '[') {
+        if (countTotal < 0 && c == ':' && _buffer.replaceAll(' ', '').toLowerCase().endsWith('"count":')) {
+          _collectCount = true;
+        } else if (c == '{' || c == '[') {
           _currentDepth++;
           if (c == '[') {
             if (_buffer.replaceAll(' ', '').toLowerCase().endsWith('"items":[')) {
@@ -141,6 +160,7 @@ class EmoteTransformer implements StreamTransformer<String, Emote> {
         } else if (c == '}' || c == ']') {
           if (_currentDepth == _itemsArrayDepth + 1 && c == '}') {
             //emote object closed
+            countCollected++;
             _controller.add(Emote.fromJson(jsonDecode(_buffer.substring(_buffer.indexOf('{')))));
             _buffer = '';
           }
@@ -194,10 +214,11 @@ class Emote {
     return data;
   }
 
-  Uri getMaxSizeUrl({Format format = Format.webp}) =>
-      host!.getUrl(host!.files!.where((f) => f.format == format).reduce((a, b) => a.height > b.height ? a : b));
+  Uri getMaxSizeUrl({Format format = Format.webp}) => host!.getUrl(
+      host!.files!.where((f) => f.format == format).reduce((a, b) => a.height > b.height ? a : b));
 
-  File getMaxSizeFile({Format format = Format.webp}) => host!.files!.reduce((a, b) => a.height > b.height ? a : b);
+  File getMaxSizeFile({Format format = Format.webp}) =>
+      host!.files!.reduce((a, b) => a.height > b.height ? a : b);
 }
 
 class Owner {
