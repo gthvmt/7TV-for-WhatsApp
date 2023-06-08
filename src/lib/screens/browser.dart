@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:seventv_for_whatsapp/models/settings.dart';
 import 'package:seventv_for_whatsapp/models/seventv.dart';
 import 'package:seventv_for_whatsapp/screens/stickerpacks.dart';
 import 'package:seventv_for_whatsapp/services/notification_service.dart';
+import 'package:seventv_for_whatsapp/widgets/create_stickerpack_dialog.dart';
 import 'package:seventv_for_whatsapp/widgets/emote_emoji_picker.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:universal_io/io.dart';
@@ -32,6 +34,7 @@ class _BrowserState extends State<Browser> {
   bool _isSearchMode = false;
   bool _isLoading = false;
   StreamIterator<Stream<Emote>>? _emoteStream;
+  bool _moreAvailable = true;
 
   static const _gridDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
     maxCrossAxisExtent: 150.0,
@@ -47,54 +50,56 @@ class _BrowserState extends State<Browser> {
     _notificationService.initialize();
     _scrollController.addListener(() async {
       if (_scrollController.offset == _scrollController.position.maxScrollExtent) {
-        await loadAdditional();
+        await getEmotes();
       }
     });
     loadTrending();
   }
 
-  Future loadAdditional() async {
-    var stream = _emoteStream;
-    if (stream != null) {
-      debugPrint('loading more emotes');
-      if (await stream.moveNext()) {
-        await for (final emote in _emoteStream!.current) {
-          setState(() => _loadedEmotes.add(emote));
-        }
-      }
-    }
-  }
-
   Future loadTrending() async {
     setState(() {
       _isLoading = true;
+      _moreAvailable = true;
       _loadedEmotes.clear();
     });
     _emoteStream = StreamIterator(_api.getTrending(_chunkSize));
-    if (await _emoteStream!.moveNext()) {
-      if (_isLoading) {
-        setState(() => _isLoading = false);
-      }
-      await for (final emote in _emoteStream!.current) {
-        setState(() => _loadedEmotes.add(emote));
-      }
-    }
+    await getEmotes();
   }
 
   Future search(searchText) async {
     setState(() {
       _isLoading = true;
+      _moreAvailable = true;
       _loadedEmotes.clear();
     });
     _emoteStream = StreamIterator(_api.search(searchText, _chunkSize));
-    if (await _emoteStream!.moveNext()) {
-      if (_isLoading) {
-        setState(() => _isLoading = false);
-      }
-      await for (final emote in _emoteStream!.current) {
-        // log('got emote ${emote.name} - url is ${emote.host!.getUrl(emote.host!.files!.where((f) => f.format == Format.avif).reduce((a, b) => a.height > b.height ? a : b))}');
-        setState(() => _loadedEmotes.add(emote));
-      }
+    await getEmotes();
+  }
+
+  Future getEmotes() async {
+    if (!_moreAvailable) {
+      return;
+    }
+    var stream = _emoteStream;
+    if (stream != null) {
+      debugPrint('loading more emotes');
+      try {
+        int fetchedEmoteCount = 0;
+        final streamIsExhausted = !(await stream.moveNext());
+        if (_isLoading) {
+          setState(() => _isLoading = false);
+        }
+        if (!streamIsExhausted) {
+          await for (final emote in stream.current) {
+            fetchedEmoteCount++;
+            setState(() => _loadedEmotes.add(emote));
+          }
+        }
+        if (fetchedEmoteCount < _chunkSize || streamIsExhausted) {
+          debugPrint('stream is exhausted');
+          setState(() => _moreAvailable = false);
+        }
+      } catch (_) {}
     }
   }
 
@@ -123,49 +128,36 @@ class _BrowserState extends State<Browser> {
     showDialog(
         context: context,
         builder: (dialogContext) {
-          return Dialog(
-            child: SingleChildScrollView(
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  // crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.fromLTRB(15, 0, 15, 15),
-                      child: Image.network(
-                        emote.getMaxSizeUrl().toString(),
-                      ),
-                    ),
-                    OutlinedButton(
-                      child: const Text('Add sticker'),
-                      onPressed: () {
-                        Navigator.pop(dialogContext);
-                        Navigator.of(dialogContext).push(PageRouteBuilder(
-                            opaque: false,
-                            pageBuilder: (BuildContext context, _, __) => EmoteEmojiPicker(emote, [
-                                  EmoteEmojiAction(_addToExistingPackLabel, _createStickerAndAddToPack),
-                                  EmoteEmojiAction(_createNewPackLabel, (ctx, emote, emojis) async {
-                                    var stickerPack = await _emoteToStickerPack(emote, emojis);
-                                    if (stickerPack == null) {
-                                      return;
-                                    }
-                                    debugPrint('sticker saved at ${(await WhatsApp.getStickerDirectory()).path}');
-                                  }),
-                                ])));
-                      },
-                    ),
-                  ],
-                ),
-              ),
+          return AlertDialog(content: Image.network(emote.getMaxSizeUrl().toString()), actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Close')),
+            OutlinedButton(
+              child: const Text('Add'),
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                Navigator.of(dialogContext).push(PageRouteBuilder(
+                    opaque: false,
+                    pageBuilder: (BuildContext context, _, __) => EmoteEmojiPicker(emote, [
+                          EmoteEmojiAction(_addToExistingPackLabel, _createStickerAndAddToPack),
+                          EmoteEmojiAction(_createNewPackLabel, (ctx, emote, emojis) async {
+                            var stickerPack = await _emoteToStickerPack(emote, emojis);
+                            if (stickerPack == null) {
+                              return;
+                            }
+                            debugPrint(
+                                'sticker saved at ${(await WhatsApp.getStickerDirectory()).path}');
+                          }),
+                        ])));
+              },
             ),
-          );
+          ]);
         });
   }
 
-  Future<void> _createStickerAndAddToPack(BuildContext context, Emote emote, List<String> emojis) async {
+  Future<void> _createStickerAndAddToPack(BuildContext _, Emote emote, List<String> emojis) async {
     //TODO: minor performance improvement if we download the full webp in the background here after returning whether
     //it is animated or not and then pass it when creating the Sticker
     final emoteIsAnimated = await emote.host!.checkIfAnimated(emote.getMaxSizeFile());
+    debugPrint('emote is animated: ${emoteIsAnimated}');
     if (!mounted) {
       return;
     }
@@ -190,63 +182,36 @@ class _BrowserState extends State<Browser> {
   }
 
   Future<StickerPack?> _emoteToStickerPack(Emote emote, List<String> emojis) async {
-    var publisherController = TextEditingController(text: '7TV for WhatsApp');
-    var nameController = TextEditingController(text: emote.name);
-    return showDialog(
-        context: context,
-        builder: (dialogContext) {
-          return Dialog(
-            child: SingleChildScrollView(
-                child: Container(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        TextField(
-                          controller: nameController,
-                          autofocus: true,
-                          decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Name'),
-                        ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: publisherController,
-                          decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Publisher'),
-                        ),
-                        const SizedBox(height: 5),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton(
-                              onPressed: () async {
-                                var stickerPack =
-                                    StickerPack.withDefaults(nameController.text, publisherController.text);
-                                await stickerPack.save();
-                                debugPrint('created sticker pack');
-                                if (mounted) {
-                                  Navigator.pop(dialogContext, stickerPack);
-                                }
-                                var sticker = await _emoteToSticker(emote, emojis);
-                                stickerPack.addSticker(sticker);
-                                stickerPack.isAnimated = sticker.isAnimated;
-                                await stickerPack.save();
-                                debugPrint('added sticker to pack - isAnimated: ${sticker.isAnimated}');
-                              },
-                              child: const Text('Create Sticker Pack')),
-                        )
-                      ],
-                    ))),
-          );
-        });
+    final settings = await SettingsManager.load();
+    if (context.mounted) {
+      final stickerPack = await showDialog<StickerPack>(
+          context: context,
+          builder: (dialogContext) {
+            return CreateStickerPackDialog(
+                defaultName: emote.name, defaultPublisher: settings.defaultPublisher);
+          });
+      if (stickerPack != null) {
+        var sticker = await _emoteToSticker(emote, emojis);
+        stickerPack.addSticker(sticker);
+        stickerPack.isAnimated = sticker.isAnimated;
+        await stickerPack.save();
+        debugPrint('added sticker to pack - isAnimated: ${sticker.isAnimated}');
+      }
+    }
+    return null;
   }
 
   Future<Sticker> _emoteToSticker(Emote emote, List<String> emojis) async {
     await _notificationService.startProcessing(emote.id, emote.name);
-    var sticker = await Sticker.fromEmote(emote, emojis);
-    await _notificationService.endProcessing(emote.id);
-    var messenger = _messengerKey.currentState;
-    if (messenger != null) {
+    try {
       //TODO: button to go to stickerpack
-      messenger.showSnackBar(SnackBar(content: Text('Done processing \'${emote.name}\'')));
+      final sticker = await Sticker.fromEmote(emote, emojis);
+      _messengerKey.currentState
+          ?.showSnackBar(SnackBar(content: Text('Done processing \'${emote.name}\'')));
+      return sticker;
+    } finally {
+      await _notificationService.endProcessing(emote.id);
     }
-    return sticker;
   }
 
   Future<void> goToStickerPacks() async {
@@ -282,11 +247,16 @@ class _BrowserState extends State<Browser> {
             //TODO: implement willpopscope to go back to trending from search
             title: _isSearchMode ? _createSearchField() : const Text('7TV for WhatsApp'),
             actions: !_isSearchMode
-                ? [IconButton(onPressed: () => setState(() => _toggleSearchMode()), icon: const Icon(Icons.search))]
+                ? [
+                    IconButton(
+                        onPressed: () => setState(() => _toggleSearchMode()),
+                        icon: const Icon(Icons.search))
+                  ]
                 : _searchController.text.isNotEmpty
                     ? [
                         IconButton(
-                            onPressed: () => setState(() => _searchController.text = ''), icon: const Icon(Icons.clear))
+                            onPressed: () => setState(() => _searchController.text = ''),
+                            icon: const Icon(Icons.clear))
                       ]
                     : null,
             leading: _isSearchMode
@@ -325,13 +295,14 @@ class _BrowserState extends State<Browser> {
                               )
                           ]),
                         ),
-                        SliverList(
-                            delegate: SliverChildListDelegate([
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 20),
-                            child: Center(child: CircularProgressIndicator()),
-                          )
-                        ]))
+                        if (_moreAvailable)
+                          SliverList(
+                              delegate: SliverChildListDelegate([
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20),
+                              child: Center(child: CircularProgressIndicator()),
+                            )
+                          ]))
                       ],
                     ),
         ),
@@ -364,7 +335,8 @@ class Skeleton extends StatelessWidget {
                         margin: const EdgeInsets.all(3),
                         decoration: ShapeDecoration(
                             color: Colors.black,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)))),
+                            shape:
+                                RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)))),
                     childCount: _searchCunkSize))
           ],
           physics: const NeverScrollableScrollPhysics(),
