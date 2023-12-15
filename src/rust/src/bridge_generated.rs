@@ -46,7 +46,6 @@ fn wire_upscale_frames_with_padding_impl(
     frames: impl Wire2Api<Vec<Frame>> + UnwindSafe,
     width: impl Wire2Api<u32> + UnwindSafe,
     height: impl Wire2Api<u32> + UnwindSafe,
-    config: impl Wire2Api<EncodingConfig> + UnwindSafe,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -58,12 +57,29 @@ fn wire_upscale_frames_with_padding_impl(
             let api_frames = frames.wire2api();
             let api_width = width.wire2api();
             let api_height = height.wire2api();
-            let api_config = config.wire2api();
             move |task_callback| {
                 Ok(upscale_frames_with_padding(
-                    api_frames, api_width, api_height, api_config,
+                    api_frames, api_width, api_height,
                 ))
             }
+        },
+    )
+}
+fn wire_encode_impl(
+    port_: MessagePort,
+    frames: impl Wire2Api<Vec<Frame>> + UnwindSafe,
+    config: impl Wire2Api<EncodingConfig> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "encode",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_frames = frames.wire2api();
+            let api_config = config.wire2api();
+            move |task_callback| Ok(encode(api_frames, api_config))
         },
     )
 }

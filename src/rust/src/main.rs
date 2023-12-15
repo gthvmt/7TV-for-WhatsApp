@@ -37,7 +37,8 @@ fn main() {
         ..Default::default()
     };
 
-    let bytes = upscale_frames_with_padding(frames, 512, 512, config);
+    let frames = upscale_frames_with_padding(frames, 512, 512);
+    let bytes = encode(frames, config);
     let size_in_kb = bytes.len() as f32 / 1024.;
     println!("produced an output of {size_in_kb:.2}KB");
     write(

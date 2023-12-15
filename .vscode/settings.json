@@ -1,0 +1,9 @@
+{
+    "dart.lineLength": 100,
+    "editor.rulers": [
+        100
+    ],
+    "rust-analyzer.linkedProjects": [
+        "src/rust/Cargo.toml"
+    ]
+}
