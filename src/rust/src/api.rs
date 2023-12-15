@@ -12,8 +12,7 @@ pub fn upscale_frames_with_padding(
     frames: Vec<Frame>,
     width: u32,
     height: u32,
-    config: EncodingConfig,
-) -> Vec<u8> {
+) -> Vec<Frame> {
     println!("number of frames: {}", frames.len());
 
     println!("resizing frames...");
@@ -32,8 +31,11 @@ pub fn upscale_frames_with_padding(
 
         processed_frames.push(Frame::new(resized, width, height, frame.timestamp));
     }
+    processed_frames
+}
 
-    let encoder = Encoder::new(processed_frames, config);
+pub fn encode(frames: Vec<Frame>, config: EncodingConfig) -> Vec<u8> {
+    let encoder = Encoder::new(frames, config);
     println!("encoding bytes...");
     let encoded_bytes = encoder.encode();
 
