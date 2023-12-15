@@ -12,9 +12,17 @@ pub extern "C" fn wire_upscale_frames_with_padding(
     frames: *mut wire_list_frame,
     width: u32,
     height: u32,
+) {
+    wire_upscale_frames_with_padding_impl(port_, frames, width, height)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_encode(
+    port_: i64,
+    frames: *mut wire_list_frame,
     config: *mut wire_EncodingConfig,
 ) {
-    wire_upscale_frames_with_padding_impl(port_, frames, width, height, config)
+    wire_encode_impl(port_, frames, config)
 }
 
 #[no_mangle]

@@ -11,24 +11,22 @@ import 'package:seventv_for_whatsapp/models/shared_preferences_keys.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ulid/ulid.dart';
 import 'package:universal_io/io.dart' as io;
+import 'package:whatsapp_stickers_handler/exceptions.dart';
 import 'package:whatsapp_stickers_handler/whatsapp_stickers_handler.dart';
 import 'package:image/image.dart';
 import 'seventv.dart';
 
 class WhatsApp {
   static Future<io.Directory> getStickerDirectory() async {
-    final applicationDocumentsDirectory =
-        await getApplicationDocumentsDirectory();
-    final packDirectory =
-        io.Directory('${applicationDocumentsDirectory.path}/stickers');
+    final applicationDocumentsDirectory = await getApplicationDocumentsDirectory();
+    final packDirectory = io.Directory('${applicationDocumentsDirectory.path}/stickers');
     return packDirectory.create(recursive: true);
   }
 
   static Future<Iterable<StickerPack>> loadStoredStickerPacks() async {
     final sharedPreferences = await SharedPreferences.getInstance();
     final stickerPackIds =
-        sharedPreferences.getStringList(SharedPreferencesKeys.stickerPacks) ??
-            [];
+        sharedPreferences.getStringList(SharedPreferencesKeys.stickerPacks) ?? [];
     return stickerPackIds
         .map((id) => sharedPreferences.getString(id))
         .where((json) => json != null)
@@ -68,21 +66,26 @@ class StickerPack {
 
   Future<void> addToWhatsApp() async {
     final stickerHandler = WhatsappStickersHandler();
-    stickerHandler.addStickerPack(
-        identifier.toString(),
-        name,
-        publisher,
-        WhatsappStickerImageHandler.fromAsset(trayImageFile).path,
-        publisherWebsite?.toString(),
-        privacyPolicyWebsite?.toString(),
-        licenseAgreementWebsite?.toString(),
-        isAnimated, {
-      for (var sticker in stickers)
-        WhatsappStickerImageHandler.fromFile(sticker.imagePath).path:
-            sticker.emojis
-    });
-    isInstalled = true;
-    await save();
+    try {
+      await stickerHandler.addStickerPack(
+          identifier.toString(),
+          name,
+          publisher,
+          WhatsappStickerImageHandler.fromAsset(trayImageFile).path,
+          publisherWebsite?.toString(),
+          privacyPolicyWebsite?.toString(),
+          licenseAgreementWebsite?.toString(),
+          isAnimated, {
+        for (var sticker in stickers)
+          WhatsappStickerImageHandler.fromFile(sticker.imagePath).path: sticker.emojis
+      });
+      isInstalled = true;
+      await save();
+    } on WhatsappStickersException catch (e) {
+      // TODO: show this (and all other exceptions that can occur) to the user
+      // so they can open an issue on github with the exception details
+      debugPrint("oopsie: ${e.cause}");
+    }
   }
 
   StickerPack.withDefaults(this.name, this.publisher)
@@ -97,19 +100,16 @@ class StickerPack {
   Future<bool> save() async {
     final id = identifier.toString();
     final sharedPreferences = await SharedPreferences.getInstance();
-    final stickerPacks =
-        sharedPreferences.getStringList(SharedPreferencesKeys.stickerPacks) ??
-            [];
+    final stickerPacks = sharedPreferences.getStringList(SharedPreferencesKeys.stickerPacks) ?? [];
     final existingPack = sharedPreferences.getString(id);
     if (!stickerPacks.contains(id) && existingPack == null) {
       stickerPacks.add(identifier.toString());
       debugPrint('new stickerpack $id added to shared preferences');
     } else {
       // merge stickers with existing (might happen if two stickers are added at the same time)
-      final existingStickers =
-          StickerPack.fromJson(jsonDecode(existingPack!)).stickers;
-      stickers.addAll(existingStickers.where((existing) => !stickers
-          .any((current) => current.identifier == existing.identifier)));
+      final existingStickers = StickerPack.fromJson(jsonDecode(existingPack!)).stickers;
+      stickers.addAll(existingStickers.where(
+          (existing) => !stickers.any((current) => current.identifier == existing.identifier)));
     }
 
     if (!await sharedPreferences.setString(id, jsonEncode(this))) {
@@ -117,8 +117,7 @@ class StickerPack {
     }
 
     debugPrint('saved stickerpack $id');
-    return await sharedPreferences.setStringList(
-        SharedPreferencesKeys.stickerPacks, stickerPacks);
+    return await sharedPreferences.setStringList(SharedPreferencesKeys.stickerPacks, stickerPacks);
   }
 
   Future<bool> delete() async {
@@ -127,9 +126,7 @@ class StickerPack {
 
     final id = identifier.toString();
     final sharedPreferences = await SharedPreferences.getInstance();
-    final stickerPacks =
-        sharedPreferences.getStringList(SharedPreferencesKeys.stickerPacks) ??
-            [];
+    final stickerPacks = sharedPreferences.getStringList(SharedPreferencesKeys.stickerPacks) ?? [];
     if (stickerPacks.remove(identifier.toString())) {
       debugPrint('stickerpack $id removed from shared preferences');
     }
@@ -139,8 +136,7 @@ class StickerPack {
     }
 
     debugPrint('deleted stickerpack $id');
-    return await sharedPreferences.setStringList(
-        SharedPreferencesKeys.stickerPacks, stickerPacks);
+    return await sharedPreferences.setStringList(SharedPreferencesKeys.stickerPacks, stickerPacks);
   }
 
   StickerPack.fromJson(Map<String, dynamic> json)
@@ -155,8 +151,7 @@ class StickerPack {
         licenseAgreementWebsite = json['licenseAgreementWebsite'],
         isAnimated = json['isAnimated'],
         isInstalled = json['isInstalled'],
-        stickers = List<Sticker>.from(
-            json['stickers'].map((sticker) => Sticker.fromJson(sticker)));
+        stickers = List<Sticker>.from(json['stickers'].map((sticker) => Sticker.fromJson(sticker)));
 
   Map<String, dynamic> toJson() => {
         'identifier': identifier.toString(),
@@ -177,6 +172,7 @@ class StickerPack {
 class Sticker {
   static const int maxStickerSizeAnimated = 500 * 1024;
   static const int maxStickerSizeStatic = 100 * 1024;
+  static const int maxStickerDuration = 10000;
 
   final Ulid identifier;
   final String imagePath;
@@ -190,8 +186,7 @@ class Sticker {
     final httpClient = io.HttpClient();
     final request = await httpClient.getUrl(emote.getMaxSizeUrl());
     final response = await request.close();
-    final imagePath =
-        '${(await WhatsApp.getStickerDirectory()).path}/$identifier.webp';
+    final imagePath = '${(await WhatsApp.getStickerDirectory()).path}/$identifier.webp';
 
     var bytes = Uint8List.fromList(await response.expand((b) => b).toList());
     final webp = WebPDecoder(bytes);
@@ -199,12 +194,33 @@ class Sticker {
       throw Exception('Bytes are not a valid WebP file');
     }
 
-    bool isAnimated = webp.info!.hasAnimation;
+    final webpInformation = webp.info!;
+    bool isAnimated = webpInformation.hasAnimation;
+
+    var frames = await api.intoFrames(bytes: Uint8List.fromList(bytes));
+
+    if (frames.isEmpty) {
+      throw Exception('WebP does not seem to have a single frame');
+    }
+
+    var duration = frames.last.timestamp;
+
+    // I (think) that the last frame timestamp + 1 is the actual 'duration' so it has to be >= here
+    // (I tried it with '=' when the last frame timestamp was 10000 and WhatsApp was not satisfied)
+    if (duration >= maxStickerDuration) {
+      // TODO: We could also either speed the animation up or remove frames from the beginning.
+      // Eventually it would be cool to make this configurable
+      debugPrint('Emote animation duration exceeds the maximum allowed animation duration for '
+          'stickers. Cutting some frames of the end.');
+
+      frames.removeWhere((frame) => frame.timestamp >= maxStickerDuration);
+      duration = frames.last.timestamp;
+      debugPrint('New emote length is $duration');
+    }
 
     //resize webp to 512x512
-    bytes = await _resizeWebp(bytes, isAnimated);
-    debugPrint(
-        'generated sticker webp is ${(bytes.length / 1024).toStringAsFixed(2)}KB');
+    bytes = await _resizeFrames(frames, bytes.length, isAnimated);
+    debugPrint('generated sticker webp is ${(bytes.length / 1024).toStringAsFixed(2)}KB large');
 
     await io.File(imagePath).writeAsBytes(bytes);
 
@@ -215,22 +231,19 @@ class Sticker {
     return List<int>.empty();
   }
 
-  static Future<Uint8List> _resizeWebp(List<int> webp, bool isAnimated) async {
-    final size = webp.length / 1024;
-    final losless = size <= 100;
+  static Future<Uint8List> _resizeFrames(List<Frame> frames, int size, bool isAnimated) async {
+    final losless = size / 1024 <= 100;
     const minSize = 1;
     final maxSize = isAnimated ? maxStickerSizeAnimated : maxStickerSizeStatic;
     debugPrint(
-        'Generating sticker webp from ${(webp.length / 1024).toStringAsFixed(2)}KB webp (mode: ${losless ? 'losless' : 'lossy'})');
-    final frames = await api.intoFrames(bytes: Uint8List.fromList(webp));
+        'Generating sticker webp from ${(size / 1024).toStringAsFixed(2)}KB webp (mode: ${losless ? 'losless' : 'lossy'})');
 
     var upscaled = Uint8List(0);
     var generatedSize = maxSize;
     var attempt = 0;
     var targetSize = maxSize.toDouble();
     const attempts = 10;
-    //sometimes (rarely in my experience) the webp encoder goes slightly over the set targetSize,
-    //this is why we use the increasing buffer (will be 0 for attempt 0)
+
     while (generatedSize > maxSize || attempt == 0) {
       var difference = generatedSize - targetSize;
       if (attempt > 0) {
@@ -240,9 +253,10 @@ class Sticker {
       if (attempt >= attempts || targetSize == minSize) {
         throw 'Not able to compress chosen emote below ${(maxSize / 1024).toStringAsFixed(2)}KB after $attempts attempts';
       }
+      //sometimes (rarely in my experience) the webp encoder goes slightly over the set targetSize,
+      //this is why we decrease this value for every failed attempt
       targetSize = max(minSize.toDouble(), generatedSize - difference * 1.6);
-      debugPrint(
-          'Set target webp size to ${(targetSize / 1024).toStringAsFixed(2)}KB');
+      debugPrint('Set target webp size to ${(targetSize / 1024).toStringAsFixed(2)}KB');
       final encodingConfig = EncodingConfig(
           losless: losless,
           quality: 100,
@@ -258,10 +272,10 @@ class Sticker {
           partitionLimit: 0,
           useSharpYuv: false,
           alphaFiltering: AlphaFilter.Fast,
-          filter: Filter.strong(FilterConfig(strength: 60, sharpness: 0)),
+          filter: const Filter.strong(FilterConfig(strength: 60, sharpness: 0)),
           method: 6);
-      upscaled = await api.upscaleFramesWithPadding(
-          frames: frames, width: 512, height: 512, config: encodingConfig);
+      frames = await api.upscaleFramesWithPadding(frames: frames, width: 512, height: 512);
+      upscaled = await api.encode(frames: frames, config: encodingConfig);
       generatedSize = upscaled.length;
       attempt++;
     }
