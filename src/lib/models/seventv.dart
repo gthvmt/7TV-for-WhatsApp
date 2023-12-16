@@ -45,14 +45,28 @@ class SevenTv {
   final _url = Uri.parse('https://7tv.io/v3/gql');
   final _client = HttpClient();
 
-  // TODO: refactor the request creation into a seperate method to reduce code redundancy
+  Stream<Stream<Emote>> buildSearchRequests(Map<String, Object> args) async* {
+    int countCollected = 0;
+    int countTotal = -1;
+    int currentPage = 1;
+    while (countTotal < 0 || countTotal > countCollected) {
+      args['page'] = currentPage;
+      final req = await _client.postUrl(_url);
+      req.headers.add(HttpHeaders.contentTypeHeader, ContentType.json.mimeType);
+      req.write(jsonEncode({'query': _searchEmotesQuery, 'variables': args}));
+      final resp = await req.close();
+      final transformer = EmoteTransformer();
+      yield resp.transform(utf8.decoder).transform(transformer);
+      countTotal = transformer.countTotal;
+      countCollected += transformer.countCollected;
+      currentPage++;
+    }
+  }
 
   Stream<Stream<Emote>> getTrending(int chunkSize) async* {
-    var currentPage = 1;
-    final variables = {
+    final args = {
       'query': '',
       'limit': chunkSize,
-      'page': currentPage,
       'sort': {'value': 'popularity', 'order': 'DESCENDING'},
       'filter': {
         'category': 'TRENDING_DAY',
@@ -64,28 +78,13 @@ class SevenTv {
         'aspect_ratio': ''
       }
     };
-    int countCollected = 0;
-    int countTotal = -1;
-    while (countTotal < 0 || countTotal > countCollected) {
-      variables['page'] = currentPage;
-      final req = await _client.postUrl(_url);
-      req.headers.add(HttpHeaders.contentTypeHeader, ContentType.json.mimeType);
-      req.write(jsonEncode({'query': _searchEmotesQuery, 'variables': variables}));
-      final resp = await req.close();
-      final transformer = EmoteTransformer();
-      yield resp.transform(utf8.decoder).transform(transformer);
-      countTotal = transformer.countTotal;
-      countCollected += transformer.countCollected;
-      currentPage++;
-    }
+    yield* buildSearchRequests(args);
   }
 
   Stream<Stream<Emote>> search(String searchText, int chunkSize) async* {
-    var currentPage = 1;
-    final variables = {
+    final args = {
       'query': searchText,
       'limit': chunkSize,
-      'page': currentPage,
       'sort': {'value': 'popularity', 'order': 'DESCENDING'},
       'filter': {
         'category': 'TOP',
@@ -97,20 +96,7 @@ class SevenTv {
         'aspect_ratio': ''
       }
     };
-    int countCollected = 0;
-    int countTotal = -1;
-    while (countTotal < 0 || countTotal > countCollected) {
-      variables['page'] = currentPage;
-      final req = await _client.postUrl(_url);
-      req.headers.add(HttpHeaders.contentTypeHeader, ContentType.json.mimeType);
-      req.write(jsonEncode({'query': _searchEmotesQuery, 'variables': variables}));
-      final resp = await req.close();
-      final transformer = EmoteTransformer();
-      yield resp.transform(utf8.decoder).transform(transformer);
-      countTotal = transformer.countTotal;
-      countCollected += transformer.countCollected;
-      currentPage++;
-    }
+    yield* buildSearchRequests(args);
   }
 }
 
@@ -146,7 +132,9 @@ class EmoteTransformer implements StreamTransformer<String, Emote> {
       if (c == '"') {
         _inStrVal = !_inStrVal;
       } else if (!_inStrVal) {
-        if (countTotal < 0 && c == ':' && _buffer.replaceAll(' ', '').toLowerCase().endsWith('"count":')) {
+        if (countTotal < 0 &&
+            c == ':' &&
+            _buffer.replaceAll(' ', '').toLowerCase().endsWith('"count":')) {
           _collectCount = true;
         } else if (c == '{' || c == '[') {
           _currentDepth++;
