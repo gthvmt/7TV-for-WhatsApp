@@ -1,4 +1,4 @@
-FROM rust:latest
+FROM rust:bookworm
 
 ARG VERSION="stable"
 ARG FLUTTER_URL="https://github.com/flutter/flutter"
@@ -12,6 +12,7 @@ USER root
 WORKDIR /
 
 ENV VERSION=$VERSION \
+    EDITOR="code" \
     PUB_CACHE="/var/tmp/.pub_cache" \
     FLUTTER_HOME=$FLUTTER_HOME \
     FLUTTER_ROOT=$FLUTTER_HOME \
@@ -24,7 +25,7 @@ ENV VERSION=$VERSION \
 # Install linux dependency and utils
 RUN set -eux; mkdir -p /usr/lib $PUB_CACHE \
     && apt-get update \
-    && apt-get install -y openjdk-11-jdk \
+    && apt-get install -y openjdk-17-jdk \
     && rm -rf /var/lib/apt/lists/* /var/cache/apk/* \
     && mkdir -p ${ANDROID_HOME}/cmdline-tools /root/.android
 
@@ -71,5 +72,5 @@ RUN set -eux; apt-get update && apt-get install -y libclang-dev \
     armv7-linux-androideabi \
     x86_64-linux-android \
     i686-linux-android
-    
+
 WORKDIR /home/root
