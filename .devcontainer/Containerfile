@@ -66,6 +66,9 @@ RUN set -eux; apt-get update && apt-get install -y libclang-dev \
     && cargo install just \
     cargo-ndk \
     flutter_rust_bridge_codegen \
+    # we dont really need this because we dont use macros in our rust code but for
+    # now there is no option to disable cargo expand in flutter_rust_bridge_codegen
+    cargo-expand \
     && rustup component add rustfmt \
     && rustup target add \
     aarch64-linux-android \
