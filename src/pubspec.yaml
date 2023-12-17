@@ -3,7 +3,7 @@ description: Use 7TV emotes as WhatsApp stickers
 publish_to: none
 version: 1.0.0+100000000
 environment:
-  sdk: ">=2.18.4 <3.0.0"
+  sdk: ">=3.0.0"
 dependencies:
   flutter:
     sdk: flutter
@@ -25,8 +25,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
-  ffigen: ^7.2.7
+  flutter_lints: ^3.0.1
+  ffigen: ^9.0.0
   build_runner: ^2.3.3
   freezed: ^2.3.2
   flutter_launcher_icons: ^0.13.1

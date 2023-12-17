@@ -93,21 +93,22 @@ class _$FilterCopyWithImpl<$Res, $Val extends Filter>
 }
 
 /// @nodoc
-abstract class _$$Filter_SimpleCopyWith<$Res> implements $FilterCopyWith<$Res> {
-  factory _$$Filter_SimpleCopyWith(
-          _$Filter_Simple value, $Res Function(_$Filter_Simple) then) =
-      __$$Filter_SimpleCopyWithImpl<$Res>;
+abstract class _$$Filter_SimpleImplCopyWith<$Res>
+    implements $FilterCopyWith<$Res> {
+  factory _$$Filter_SimpleImplCopyWith(
+          _$Filter_SimpleImpl value, $Res Function(_$Filter_SimpleImpl) then) =
+      __$$Filter_SimpleImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({FilterConfig field0});
 }
 
 /// @nodoc
-class __$$Filter_SimpleCopyWithImpl<$Res>
-    extends _$FilterCopyWithImpl<$Res, _$Filter_Simple>
-    implements _$$Filter_SimpleCopyWith<$Res> {
-  __$$Filter_SimpleCopyWithImpl(
-      _$Filter_Simple _value, $Res Function(_$Filter_Simple) _then)
+class __$$Filter_SimpleImplCopyWithImpl<$Res>
+    extends _$FilterCopyWithImpl<$Res, _$Filter_SimpleImpl>
+    implements _$$Filter_SimpleImplCopyWith<$Res> {
+  __$$Filter_SimpleImplCopyWithImpl(
+      _$Filter_SimpleImpl _value, $Res Function(_$Filter_SimpleImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -115,7 +116,7 @@ class __$$Filter_SimpleCopyWithImpl<$Res>
   $Res call({
     Object? field0 = null,
   }) {
-    return _then(_$Filter_Simple(
+    return _then(_$Filter_SimpleImpl(
       null == field0
           ? _value.field0
           : field0 // ignore: cast_nullable_to_non_nullable
@@ -126,8 +127,8 @@ class __$$Filter_SimpleCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$Filter_Simple implements Filter_Simple {
-  const _$Filter_Simple(this.field0);
+class _$Filter_SimpleImpl implements Filter_Simple {
+  const _$Filter_SimpleImpl(this.field0);
 
   @override
   final FilterConfig field0;
@@ -138,10 +139,10 @@ class _$Filter_Simple implements Filter_Simple {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$Filter_Simple &&
+            other is _$Filter_SimpleImpl &&
             (identical(other.field0, field0) || other.field0 == field0));
   }
 
@@ -151,8 +152,8 @@ class _$Filter_Simple implements Filter_Simple {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$Filter_SimpleCopyWith<_$Filter_Simple> get copyWith =>
-      __$$Filter_SimpleCopyWithImpl<_$Filter_Simple>(this, _$identity);
+  _$$Filter_SimpleImplCopyWith<_$Filter_SimpleImpl> get copyWith =>
+      __$$Filter_SimpleImplCopyWithImpl<_$Filter_SimpleImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -218,32 +219,33 @@ class _$Filter_Simple implements Filter_Simple {
 }
 
 abstract class Filter_Simple implements Filter {
-  const factory Filter_Simple(final FilterConfig field0) = _$Filter_Simple;
+  const factory Filter_Simple(final FilterConfig field0) = _$Filter_SimpleImpl;
 
   @override
   FilterConfig get field0;
   @override
   @JsonKey(ignore: true)
-  _$$Filter_SimpleCopyWith<_$Filter_Simple> get copyWith =>
+  _$$Filter_SimpleImplCopyWith<_$Filter_SimpleImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class _$$Filter_StrongCopyWith<$Res> implements $FilterCopyWith<$Res> {
-  factory _$$Filter_StrongCopyWith(
-          _$Filter_Strong value, $Res Function(_$Filter_Strong) then) =
-      __$$Filter_StrongCopyWithImpl<$Res>;
+abstract class _$$Filter_StrongImplCopyWith<$Res>
+    implements $FilterCopyWith<$Res> {
+  factory _$$Filter_StrongImplCopyWith(
+          _$Filter_StrongImpl value, $Res Function(_$Filter_StrongImpl) then) =
+      __$$Filter_StrongImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({FilterConfig field0});
 }
 
 /// @nodoc
-class __$$Filter_StrongCopyWithImpl<$Res>
-    extends _$FilterCopyWithImpl<$Res, _$Filter_Strong>
-    implements _$$Filter_StrongCopyWith<$Res> {
-  __$$Filter_StrongCopyWithImpl(
-      _$Filter_Strong _value, $Res Function(_$Filter_Strong) _then)
+class __$$Filter_StrongImplCopyWithImpl<$Res>
+    extends _$FilterCopyWithImpl<$Res, _$Filter_StrongImpl>
+    implements _$$Filter_StrongImplCopyWith<$Res> {
+  __$$Filter_StrongImplCopyWithImpl(
+      _$Filter_StrongImpl _value, $Res Function(_$Filter_StrongImpl) _then)
       : super(_value, _then);
 
   @pragma('vm:prefer-inline')
@@ -251,7 +253,7 @@ class __$$Filter_StrongCopyWithImpl<$Res>
   $Res call({
     Object? field0 = null,
   }) {
-    return _then(_$Filter_Strong(
+    return _then(_$Filter_StrongImpl(
       null == field0
           ? _value.field0
           : field0 // ignore: cast_nullable_to_non_nullable
@@ -262,8 +264,8 @@ class __$$Filter_StrongCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$Filter_Strong implements Filter_Strong {
-  const _$Filter_Strong(this.field0);
+class _$Filter_StrongImpl implements Filter_Strong {
+  const _$Filter_StrongImpl(this.field0);
 
   @override
   final FilterConfig field0;
@@ -274,10 +276,10 @@ class _$Filter_Strong implements Filter_Strong {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$Filter_Strong &&
+            other is _$Filter_StrongImpl &&
             (identical(other.field0, field0) || other.field0 == field0));
   }
 
@@ -287,8 +289,8 @@ class _$Filter_Strong implements Filter_Strong {
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
-  _$$Filter_StrongCopyWith<_$Filter_Strong> get copyWith =>
-      __$$Filter_StrongCopyWithImpl<_$Filter_Strong>(this, _$identity);
+  _$$Filter_StrongImplCopyWith<_$Filter_StrongImpl> get copyWith =>
+      __$$Filter_StrongImplCopyWithImpl<_$Filter_StrongImpl>(this, _$identity);
 
   @override
   @optionalTypeArgs
@@ -354,12 +356,12 @@ class _$Filter_Strong implements Filter_Strong {
 }
 
 abstract class Filter_Strong implements Filter {
-  const factory Filter_Strong(final FilterConfig field0) = _$Filter_Strong;
+  const factory Filter_Strong(final FilterConfig field0) = _$Filter_StrongImpl;
 
   @override
   FilterConfig get field0;
   @override
   @JsonKey(ignore: true)
-  _$$Filter_StrongCopyWith<_$Filter_Strong> get copyWith =>
+  _$$Filter_StrongImplCopyWith<_$Filter_StrongImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
