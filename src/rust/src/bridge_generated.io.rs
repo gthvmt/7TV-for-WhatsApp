@@ -318,6 +318,12 @@ impl Default for wire_EncodingConfig {
     }
 }
 
+impl Default for wire_Filter {
+    fn default() -> Self {
+        Self::new_with_null_ptr()
+    }
+}
+
 impl NewWithNullPtr for wire_Filter {
     fn new_with_null_ptr() -> Self {
         Self {
