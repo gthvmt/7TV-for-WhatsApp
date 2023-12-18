@@ -1,7 +1,7 @@
 name: seventv_for_whatsapp
 description: Use 7TV emotes as WhatsApp stickers
 publish_to: none
-version: 1.0.0+100000000
+version: 1.1.0+100100000
 environment:
   sdk: ">=3.0.0"
 dependencies:
