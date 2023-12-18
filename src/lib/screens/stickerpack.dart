@@ -85,8 +85,8 @@ class _StickerPackState extends State<StickerPack> {
           backgroundColor: !isValidPack ? const Color.fromARGB(255, 120, 120, 120) : null,
           foregroundColor: !isValidPack ? const Color.fromARGB(255, 70, 70, 70) : null,
           onPressed: !isValidPack ? null : () => _addToWhatsApp(widget.stickerPack),
-          label: Row(
-            children: const [Icon(Icons.add), SizedBox(width: 2), Text('Add to WhatsApp')],
+          label: const Row(
+            children: [Icon(Icons.add), SizedBox(width: 2), Text('Add to WhatsApp')],
           )),
     );
   }

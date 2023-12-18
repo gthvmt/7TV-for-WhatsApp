@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:seventv_for_whatsapp/models/settings.dart';
@@ -9,7 +8,6 @@ import 'package:seventv_for_whatsapp/services/notification_service.dart';
 import 'package:seventv_for_whatsapp/widgets/create_stickerpack_dialog.dart';
 import 'package:seventv_for_whatsapp/widgets/emote_emoji_picker.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:universal_io/io.dart';
 
 import '../models/whatsapp.dart';
 import 'stickerpack.dart' as views;
@@ -157,7 +155,7 @@ class _BrowserState extends State<Browser> {
     //TODO: minor performance improvement if we download the full webp in the background here after returning whether
     //it is animated or not and then pass it when creating the Sticker
     final emoteIsAnimated = await emote.host!.checkIfAnimated(emote.getMaxSizeFile());
-    debugPrint('emote is animated: ${emoteIsAnimated}');
+    debugPrint('emote is animated: $emoteIsAnimated');
     if (!mounted) {
       return;
     }
@@ -282,7 +280,9 @@ class _BrowserState extends State<Browser> {
                                 onTap: () => _emoteTapped(emote),
                                 child: Stack(
                                   children: [
-                                    Center(child: Image.network(emote.getMaxSizeUrl().toString())),
+                                    Center(
+                                      child: _buildEmoteImage(emote),
+                                    ),
                                     Align(
                                       alignment: Alignment.bottomCenter,
                                       child: Text(
@@ -307,16 +307,24 @@ class _BrowserState extends State<Browser> {
                     ),
         ),
       );
+
+  Widget _buildEmoteImage(Emote emote) {
+    final url = emote.getMaxSizeUrl();
+    if (url == null) {
+      // TODO: should probably not list these broken emotes alltogether
+      return const Placeholder();
+    }
+    return Image.network(url.toString());
+  }
 }
 
 class Skeleton extends StatelessWidget {
   const Skeleton({
-    Key? key,
+    super.key,
     required SliverGridDelegateWithMaxCrossAxisExtent gridDelegate,
     required int searchCunkSize,
   })  : _gridDelegate = gridDelegate,
-        _searchCunkSize = searchCunkSize,
-        super(key: key);
+        _searchCunkSize = searchCunkSize;
 
   final SliverGridDelegateWithMaxCrossAxisExtent _gridDelegate;
   final int _searchCunkSize;

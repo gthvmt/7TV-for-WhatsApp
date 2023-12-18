@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:seventv_for_whatsapp/models/whatsapp.dart';
 import 'package:seventv_for_whatsapp/widgets/create_stickerpack_dialog.dart';
 
-import 'package:seventv_for_whatsapp/services/notification_service.dart';
 
 class StickerPackSelectedCallbackResult {
   final bool reloadRequired;
