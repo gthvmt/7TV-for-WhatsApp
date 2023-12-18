@@ -184,7 +184,11 @@ class Sticker {
   static Future<Sticker> fromEmote(Emote emote, List<String> emojis) async {
     final identifier = Ulid();
     final httpClient = io.HttpClient();
-    final request = await httpClient.getUrl(emote.getMaxSizeUrl());
+    final url = emote.getMaxSizeUrl();
+    if (url == null) {
+      throw Exception('Unable to get image URL from emote');
+    }
+    final request = await httpClient.getUrl(url);
     final response = await request.close();
     final imagePath = '${(await WhatsApp.getStickerDirectory()).path}/$identifier.webp';
 

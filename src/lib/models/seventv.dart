@@ -4,7 +4,8 @@ import 'dart:convert';
 import 'dart:async';
 
 class SevenTv {
-  static const _searchEmotesQuery = r'''
+  static const _searchEmotesQuery =
+      r'''
     query SearchEmotes($query: String!, $page: Int, $sort: Sort, $limit: Int, $filter: EmoteSearchFilter) {
       emotes(query: $query, page: $page, sort: $sort, limit: $limit, filter: $filter) {
         count
@@ -43,7 +44,7 @@ class SevenTv {
 ''';
 
   final _url = Uri.parse('https://7tv.io/v3/gql');
-  final _client = HttpClient();
+  final client = HttpClient();
 
   Stream<Stream<Emote>> buildSearchRequests(Map<String, Object> args) async* {
     int countCollected = 0;
@@ -51,7 +52,7 @@ class SevenTv {
     int currentPage = 1;
     while (countTotal < 0 || countTotal > countCollected) {
       args['page'] = currentPage;
-      final req = await _client.postUrl(_url);
+      final req = await client.postUrl(_url);
       req.headers.add(HttpHeaders.contentTypeHeader, ContentType.json.mimeType);
       req.write(jsonEncode({'query': _searchEmotesQuery, 'variables': args}));
       final resp = await req.close();
@@ -202,8 +203,11 @@ class Emote {
     return data;
   }
 
-  Uri getMaxSizeUrl({Format format = Format.webp}) => host!.getUrl(
-      host!.files!.where((f) => f.format == format).reduce((a, b) => a.height > b.height ? a : b));
+  Uri? getMaxSizeUrl({Format format = Format.webp}) {
+    final files = host?.files?.where((f) => f.format == format);
+    final file = files?.isEmpty ?? true ? null : files?.reduce((a, b) => a.height > b.height ? a : b);
+    return file == null ? null : host?.getUrl(file);
+  }
 
   File getMaxSizeFile({Format format = Format.webp}) =>
       host!.files!.reduce((a, b) => a.height > b.height ? a : b);
@@ -292,7 +296,7 @@ class Host {
       throw "url does not lead to a valid webp";
     }
     // Check if the file is animated by looking for the "ANIM" chunk identifier
-    final isAnimated = listEquals(bytes.sublist(30, 30 + 4), utf8.encode('ANIM') as Uint8List);
+    final isAnimated = listEquals(bytes.sublist(30, 30 + 4), utf8.encode('ANIM'));
     return isAnimated;
   }
 }
