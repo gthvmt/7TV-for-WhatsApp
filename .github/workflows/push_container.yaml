@@ -1,0 +1,28 @@
+name: Push container
+on:
+  push:
+    branches:
+      - development
+      - master
+    paths:
+      - '.devcontainer/Containerfile'
+
+jobs:
+  push:
+    name: Push container image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{secrets.TOKEN}}
+      - name: 'Login to GitHub Container Registry'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{github.repository_owner}}
+          password: ${{secrets.TOKEN}}
+      - name: Build and push Docker image
+        run: |
+          docker build . -f ./.devcontainer/Containerfile -t ghcr.io/${{ github.repository_owner }}/7tv4wa-dev:${{ github.head_ref || github.ref_name }} -t ghcr.io/${{ github.repository_owner }}/7tv4wa-dev:latest
+          docker push ghcr.io/${{ github.repository_owner }}/7tv4wa-dev --all-tags
