@@ -1,17 +1,17 @@
-name: Release
+name: Build
 on:
-  push:
-    branches:
-      - master
+  pull_request:
+    types:
+      - opened
+      - synchronize
 
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+  contents: read
+  pull-requests: read
 
 jobs:
-  release:
-    name: Create release
+  build:
+    name: Build APK
     runs-on: ubuntu-latest
     container:
       image: >-
@@ -34,5 +34,3 @@ jobs:
           token: ${{secrets.TOKEN}}
       - name: Build apk
         run: chmod +x .github/workflows/*.sh && .github/workflows/build.sh
-      - name: Publish release
-        run: git config --global --add safe.directory '*' && .github/workflows/publish.sh
