@@ -92,7 +92,8 @@ class _EmoteEmojiPickerState extends State<EmoteEmojiPicker> {
                 },
                 config: Config(
                   bgColor: Theme.of(context).colorScheme.background,
-                  skinToneDialogBgColor: Theme.of(context).colorScheme.background,
+                  skinToneDialogBgColor:
+                      Theme.of(context).colorScheme.background,
                   indicatorColor: Theme.of(context).colorScheme.primary,
                   iconColor: Theme.of(context).disabledColor,
                   iconColorSelected: Theme.of(context).colorScheme.primary,

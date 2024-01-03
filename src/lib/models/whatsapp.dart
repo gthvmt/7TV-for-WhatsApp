@@ -6,8 +6,10 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 // import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:seventv_for_whatsapp/models/ffi.dart';
+import 'package:seventv_for_whatsapp/src/rust/api/api.dart';
 import 'package:seventv_for_whatsapp/models/shared_preferences_keys.dart';
+import 'package:seventv_for_whatsapp/src/rust/webp/encode.dart';
+import 'package:seventv_for_whatsapp/src/rust/webp/shared.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ulid/ulid.dart';
 import 'package:universal_io/io.dart' as io;
@@ -18,15 +20,18 @@ import 'seventv.dart';
 
 class WhatsApp {
   static Future<io.Directory> getStickerDirectory() async {
-    final applicationDocumentsDirectory = await getApplicationDocumentsDirectory();
-    final packDirectory = io.Directory('${applicationDocumentsDirectory.path}/stickers');
+    final applicationDocumentsDirectory =
+        await getApplicationDocumentsDirectory();
+    final packDirectory =
+        io.Directory('${applicationDocumentsDirectory.path}/stickers');
     return packDirectory.create(recursive: true);
   }
 
   static Future<Iterable<StickerPack>> loadStoredStickerPacks() async {
     final sharedPreferences = await SharedPreferences.getInstance();
     final stickerPackIds =
-        sharedPreferences.getStringList(SharedPreferencesKeys.stickerPacks) ?? [];
+        sharedPreferences.getStringList(SharedPreferencesKeys.stickerPacks) ??
+            [];
     return stickerPackIds
         .map((id) => sharedPreferences.getString(id))
         .where((json) => json != null)
@@ -77,7 +82,8 @@ class StickerPack {
           licenseAgreementWebsite?.toString(),
           isAnimated, {
         for (var sticker in stickers)
-          WhatsappStickerImageHandler.fromFile(sticker.imagePath).path: sticker.emojis
+          WhatsappStickerImageHandler.fromFile(sticker.imagePath).path:
+              sticker.emojis
       });
       isInstalled = true;
       await save();
@@ -100,16 +106,19 @@ class StickerPack {
   Future<bool> save() async {
     final id = identifier.toString();
     final sharedPreferences = await SharedPreferences.getInstance();
-    final stickerPacks = sharedPreferences.getStringList(SharedPreferencesKeys.stickerPacks) ?? [];
+    final stickerPacks =
+        sharedPreferences.getStringList(SharedPreferencesKeys.stickerPacks) ??
+            [];
     final existingPack = sharedPreferences.getString(id);
     if (!stickerPacks.contains(id) && existingPack == null) {
       stickerPacks.add(identifier.toString());
       debugPrint('new stickerpack $id added to shared preferences');
     } else {
       // merge stickers with existing (might happen if two stickers are added at the same time)
-      final existingStickers = StickerPack.fromJson(jsonDecode(existingPack!)).stickers;
-      stickers.addAll(existingStickers.where(
-          (existing) => !stickers.any((current) => current.identifier == existing.identifier)));
+      final existingStickers =
+          StickerPack.fromJson(jsonDecode(existingPack!)).stickers;
+      stickers.addAll(existingStickers.where((existing) => !stickers
+          .any((current) => current.identifier == existing.identifier)));
     }
 
     if (!await sharedPreferences.setString(id, jsonEncode(this))) {
@@ -117,7 +126,8 @@ class StickerPack {
     }
 
     debugPrint('saved stickerpack $id');
-    return await sharedPreferences.setStringList(SharedPreferencesKeys.stickerPacks, stickerPacks);
+    return await sharedPreferences.setStringList(
+        SharedPreferencesKeys.stickerPacks, stickerPacks);
   }
 
   Future<bool> delete() async {
@@ -126,7 +136,9 @@ class StickerPack {
 
     final id = identifier.toString();
     final sharedPreferences = await SharedPreferences.getInstance();
-    final stickerPacks = sharedPreferences.getStringList(SharedPreferencesKeys.stickerPacks) ?? [];
+    final stickerPacks =
+        sharedPreferences.getStringList(SharedPreferencesKeys.stickerPacks) ??
+            [];
     if (stickerPacks.remove(identifier.toString())) {
       debugPrint('stickerpack $id removed from shared preferences');
     }
@@ -136,7 +148,8 @@ class StickerPack {
     }
 
     debugPrint('deleted stickerpack $id');
-    return await sharedPreferences.setStringList(SharedPreferencesKeys.stickerPacks, stickerPacks);
+    return await sharedPreferences.setStringList(
+        SharedPreferencesKeys.stickerPacks, stickerPacks);
   }
 
   StickerPack.fromJson(Map<String, dynamic> json)
@@ -151,7 +164,8 @@ class StickerPack {
         licenseAgreementWebsite = json['licenseAgreementWebsite'],
         isAnimated = json['isAnimated'],
         isInstalled = json['isInstalled'],
-        stickers = List<Sticker>.from(json['stickers'].map((sticker) => Sticker.fromJson(sticker)));
+        stickers = List<Sticker>.from(
+            json['stickers'].map((sticker) => Sticker.fromJson(sticker)));
 
   Map<String, dynamic> toJson() => {
         'identifier': identifier.toString(),
@@ -190,7 +204,8 @@ class Sticker {
     }
     final request = await httpClient.getUrl(url);
     final response = await request.close();
-    final imagePath = '${(await WhatsApp.getStickerDirectory()).path}/$identifier.webp';
+    final imagePath =
+        '${(await WhatsApp.getStickerDirectory()).path}/$identifier.webp';
 
     var bytes = Uint8List.fromList(await response.expand((b) => b).toList());
     final webp = WebPDecoder(bytes);
@@ -201,7 +216,7 @@ class Sticker {
     final webpInformation = webp.info!;
     bool isAnimated = webpInformation.hasAnimation;
 
-    var frames = await api.intoFrames(bytes: Uint8List.fromList(bytes));
+    var frames = await intoFrames(bytes: Uint8List.fromList(bytes));
 
     if (frames.isEmpty) {
       throw Exception('WebP does not seem to have a single frame');
@@ -214,7 +229,8 @@ class Sticker {
     if (duration >= maxStickerDuration) {
       // TODO: We could also either speed the animation up or remove frames from the beginning.
       // Eventually it would be cool to make this configurable
-      debugPrint('Emote animation duration exceeds the maximum allowed animation duration for '
+      debugPrint(
+          'Emote animation duration exceeds the maximum allowed animation duration for '
           'stickers. Cutting some frames of the end.');
 
       frames.removeWhere((frame) => frame.timestamp >= maxStickerDuration);
@@ -224,7 +240,8 @@ class Sticker {
 
     //resize webp to 512x512
     bytes = await _resizeFrames(frames, bytes.length, isAnimated);
-    debugPrint('generated sticker webp is ${(bytes.length / 1024).toStringAsFixed(2)}KB large');
+    debugPrint(
+        'generated sticker webp is ${(bytes.length / 1024).toStringAsFixed(2)}KB large');
 
     await io.File(imagePath).writeAsBytes(bytes);
 
@@ -235,7 +252,8 @@ class Sticker {
     return List<int>.empty();
   }
 
-  static Future<Uint8List> _resizeFrames(List<Frame> frames, int size, bool isAnimated) async {
+  static Future<Uint8List> _resizeFrames(
+      List<Frame> frames, int size, bool isAnimated) async {
     final losless = size / 1024 <= 100;
     const minSize = 1;
     final maxSize = isAnimated ? maxStickerSizeAnimated : maxStickerSizeStatic;
@@ -260,7 +278,8 @@ class Sticker {
       //sometimes (rarely in my experience) the webp encoder goes slightly over the set targetSize,
       //this is why we decrease this value for every failed attempt
       targetSize = max(minSize.toDouble(), generatedSize - difference * 1.6);
-      debugPrint('Set target webp size to ${(targetSize / 1024).toStringAsFixed(2)}KB');
+      debugPrint(
+          'Set target webp size to ${(targetSize / 1024).toStringAsFixed(2)}KB');
       final encodingConfig = EncodingConfig(
           losless: losless,
           quality: 100,
@@ -275,11 +294,12 @@ class Sticker {
           partitions: 0,
           partitionLimit: 0,
           useSharpYuv: false,
-          alphaFiltering: AlphaFilter.Fast,
+          alphaFiltering: AlphaFilter.fast,
           filter: const Filter.strong(FilterConfig(strength: 60, sharpness: 0)),
           method: 6);
-      frames = await api.upscaleFramesWithPadding(frames: frames, width: 512, height: 512);
-      upscaled = await api.encode(frames: frames, config: encodingConfig);
+      frames = await upscaleFramesWithPadding(
+          frames: frames, width: 512, height: 512);
+      upscaled = await encode(frames: frames, config: encodingConfig);
       generatedSize = upscaled.length;
       attempt++;
     }

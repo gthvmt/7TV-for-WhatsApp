@@ -4,8 +4,7 @@ import 'dart:convert';
 import 'dart:async';
 
 class SevenTv {
-  static const _searchEmotesQuery =
-      r'''
+  static const _searchEmotesQuery = r'''
     query SearchEmotes($query: String!, $page: Int, $sort: Sort, $limit: Int, $filter: EmoteSearchFilter) {
       emotes(query: $query, page: $page, sort: $sort, limit: $limit, filter: $filter) {
         count
@@ -140,7 +139,10 @@ class EmoteTransformer implements StreamTransformer<String, Emote> {
         } else if (c == '{' || c == '[') {
           _currentDepth++;
           if (c == '[') {
-            if (_buffer.replaceAll(' ', '').toLowerCase().endsWith('"items":[')) {
+            if (_buffer
+                .replaceAll(' ', '')
+                .toLowerCase()
+                .endsWith('"items":[')) {
               _itemsArrayDepth = _currentDepth;
               //clear buffer because it now collects emote json
               _buffer = '';
@@ -150,7 +152,8 @@ class EmoteTransformer implements StreamTransformer<String, Emote> {
           if (_currentDepth == _itemsArrayDepth + 1 && c == '}') {
             //emote object closed
             countCollected++;
-            _controller.add(Emote.fromJson(jsonDecode(_buffer.substring(_buffer.indexOf('{')))));
+            _controller.add(Emote.fromJson(
+                jsonDecode(_buffer.substring(_buffer.indexOf('{')))));
             _buffer = '';
           }
           if (_currentDepth == _itemsArrayDepth && _itemsArrayDepth > 0) {
@@ -205,7 +208,9 @@ class Emote {
 
   Uri? getMaxSizeUrl({Format format = Format.webp}) {
     final files = host?.files?.where((f) => f.format == format);
-    final file = files?.isEmpty ?? true ? null : files?.reduce((a, b) => a.height > b.height ? a : b);
+    final file = files?.isEmpty ?? true
+        ? null
+        : files?.reduce((a, b) => a.height > b.height ? a : b);
     return file == null ? null : host?.getUrl(file);
   }
 
@@ -296,7 +301,8 @@ class Host {
       throw "url does not lead to a valid webp";
     }
     // Check if the file is animated by looking for the "ANIM" chunk identifier
-    final isAnimated = listEquals(bytes.sublist(30, 30 + 4), utf8.encode('ANIM'));
+    final isAnimated =
+        listEquals(bytes.sublist(30, 30 + 4), utf8.encode('ANIM'));
     return isAnimated;
   }
 }

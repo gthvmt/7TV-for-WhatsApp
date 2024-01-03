@@ -6,10 +6,13 @@ class CreateStickerPackDialog extends StatefulWidget {
   final String defaultPublisher;
 
   const CreateStickerPackDialog(
-      {super.key, this.defaultName, this.defaultPublisher = '7TV for WhatsApp'});
+      {super.key,
+      this.defaultName,
+      this.defaultPublisher = '7TV for WhatsApp'});
 
   @override
-  State<CreateStickerPackDialog> createState() => _CreateStickerPackDialogState();
+  State<CreateStickerPackDialog> createState() =>
+      _CreateStickerPackDialogState();
 
   Future<StickerPack?> show(BuildContext context) =>
       showDialog<StickerPack>(context: context, builder: (_) => this);
@@ -44,7 +47,8 @@ class _CreateStickerPackDialogState extends State<CreateStickerPackDialog> {
               TextFormField(
                 autofocus: true,
                 controller: nameController,
-                decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Name'),
+                decoration: const InputDecoration(
+                    border: OutlineInputBorder(), labelText: 'Name'),
                 validator: (name) => name?.isEmpty ?? true
                     ? "Can't be empty"
                     : name!.length > 128
@@ -54,8 +58,8 @@ class _CreateStickerPackDialogState extends State<CreateStickerPackDialog> {
               const SizedBox(height: 10),
               TextFormField(
                 controller: publisherController,
-                decoration:
-                    const InputDecoration(border: OutlineInputBorder(), labelText: 'Publisher'),
+                decoration: const InputDecoration(
+                    border: OutlineInputBorder(), labelText: 'Publisher'),
                 validator: (publisher) => publisher?.isEmpty ?? true
                     ? "Can't be empty"
                     : publisher!.length > 128
@@ -69,8 +73,8 @@ class _CreateStickerPackDialogState extends State<CreateStickerPackDialog> {
           TextButton(
               onPressed: canCreate
                   ? () async {
-                      var stickerPack =
-                          StickerPack.withDefaults(nameController.text, publisherController.text);
+                      var stickerPack = StickerPack.withDefaults(
+                          nameController.text, publisherController.text);
                       await stickerPack.save();
                       debugPrint('created sticker pack');
                       if (context.mounted) {

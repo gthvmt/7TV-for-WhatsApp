@@ -4,12 +4,15 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:seventv_for_whatsapp/screens/browser.dart';
+import 'package:seventv_for_whatsapp/src/rust/frb_generated.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 var _errorDialogIsVisible = false;
 
-void main() {
+Future<void> main() async {
+  await RustLib.init();
+  
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
 

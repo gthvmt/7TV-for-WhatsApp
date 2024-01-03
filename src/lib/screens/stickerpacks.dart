@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:seventv_for_whatsapp/models/whatsapp.dart';
 import 'package:seventv_for_whatsapp/widgets/create_stickerpack_dialog.dart';
 
-
 class StickerPackSelectedCallbackResult {
   final bool reloadRequired;
 
@@ -10,7 +9,8 @@ class StickerPackSelectedCallbackResult {
 }
 
 class StickerPacks extends StatefulWidget {
-  final Future<StickerPackSelectedCallbackResult>? Function(StickerPack) onStickerPackSelected;
+  final Future<StickerPackSelectedCallbackResult>? Function(StickerPack)
+      onStickerPackSelected;
   final bool Function(StickerPack)? filter;
   const StickerPacks(this.onStickerPackSelected, {super.key, this.filter});
 
@@ -33,7 +33,8 @@ class StickerPacksState extends State<StickerPacks> {
     debugPrint('loading stickerpacks');
     for (var pack in await WhatsApp.loadStoredStickerPacks()) {
       setState(() => _loadedPacks.add(pack));
-      debugPrint('loaded stickerpack ${pack.name} - isAnimated: ${pack.isAnimated}');
+      debugPrint(
+          'loaded stickerpack ${pack.name} - isAnimated: ${pack.isAnimated}');
     }
   }
 
@@ -61,7 +62,8 @@ class StickerPacksState extends State<StickerPacks> {
           slivers: [
             SliverGrid(
               gridDelegate: _gridDelegate,
-              delegate: SliverChildListDelegate([for (final pack in _loadedPacks) _buildPackContainer(pack)]),
+              delegate: SliverChildListDelegate(
+                  [for (final pack in _loadedPacks) _buildPackContainer(pack)]),
             ),
           ],
         ),
@@ -100,7 +102,10 @@ class StickerPacksState extends State<StickerPacks> {
           )
         : GestureDetector(
             onTap: () async =>
-                (await widget.onStickerPackSelected(pack))?.reloadRequired == true ? await _loadPacks() : null,
+                (await widget.onStickerPackSelected(pack))?.reloadRequired ==
+                        true
+                    ? await _loadPacks()
+                    : null,
             child: child);
   }
 }

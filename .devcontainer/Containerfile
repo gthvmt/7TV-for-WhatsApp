@@ -25,9 +25,16 @@ ENV VERSION=$VERSION \
 # Install linux dependency and utils
 RUN set -eux; mkdir -p /usr/lib $PUB_CACHE \
     && apt-get update \
-    && apt-get install -y openjdk-17-jdk \
+    && apt-get install -y locales openjdk-17-jdk \
     && rm -rf /var/lib/apt/lists/* /var/cache/apk/* \
     && mkdir -p ${ANDROID_HOME}/cmdline-tools /root/.android
+
+# Set the locale
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
+    locale-gen
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8
 
 # Install & config Flutter
 RUN set -eux; git clone -b ${VERSION} --depth 1 "${FLUTTER_URL}.git" "${FLUTTER_ROOT}" \
@@ -65,10 +72,7 @@ RUN set -eux; cd "${FLUTTER_HOME}/bin" \
 RUN set -eux; apt-get update && apt-get install -y libclang-dev \
     && cargo install just \
     cargo-ndk \
-    flutter_rust_bridge_codegen \
-    # we dont really need this because we dont use macros in our rust code but for
-    # now there is no option to disable cargo expand in flutter_rust_bridge_codegen
-    cargo-expand \
+    'flutter_rust_bridge_codegen@^2.0.0-dev.3' \
     && rustup component add rustfmt \
     && rustup target add \
     aarch64-linux-android \

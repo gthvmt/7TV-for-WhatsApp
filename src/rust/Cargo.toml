@@ -4,12 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-crate-type = ["staticlib", "cdylib"]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-flutter_rust_bridge = "1"
+flutter_rust_bridge = "=2.0.0-dev.12"
 webp = {git = "https://github.com/jaredforth/webp.git"}
 image = "0.24.5"
 fast_image_resize = "2.6.0"

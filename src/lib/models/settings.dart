@@ -9,18 +9,19 @@ class Settings {
   Settings();
 
   Settings.fromJson(Map<String, dynamic> json)
-    : defaultPublisher = json['defaultPublisher'];
+      : defaultPublisher = json['defaultPublisher'];
 
   Map<String, dynamic> toJson() => {
-    'defaultPublisher': defaultPublisher,
-  };
+        'defaultPublisher': defaultPublisher,
+      };
 }
 
 class SettingsManager {
   static Future<Settings> load() async {
     final sharedPreferences = await SharedPreferences.getInstance();
-    final jsonString = sharedPreferences.getString(SharedPreferencesKeys.settings);
-    if(jsonString == null) {
+    final jsonString =
+        sharedPreferences.getString(SharedPreferencesKeys.settings);
+    if (jsonString == null) {
       return Settings();
     }
     return Settings.fromJson(jsonDecode(jsonString));

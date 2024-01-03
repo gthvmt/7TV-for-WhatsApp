@@ -1,12 +1,13 @@
 buildscript {
-    ext.kotlin_version = '1.9.21'
+    ext.gradle_plugin_version = '7.4.0'
+    ext.kotlin_version = '1.7.21'
     repositories {
         google()
         mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.3.0'
+        classpath "com.android.tools.build:gradle:$gradle_plugin_version"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -29,41 +30,3 @@ subprojects {
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
-
-//run the following once the rust src changes:
-//flutter_rust_bridge_codegen --rust-input ./rust/src/api.rs --dart-output ./lib/models/webp_bridge_generated.dart
-//cd ./rust && cargo ndk --platform 24 -t armeabi-v7a -t arm64-v8a -o ../android/app/src/main/jniLibs build --release
-//TODO: move this to a makefile
-
-//flutter_rust_bridge docs suggest the bellow. Does not work for me and results in the apk compilation
-//looping new gradle tasks and never finishing
-// [
-//         Debug: null,
-//         Profile: '--release',
-//         Release: '--release'
-// ].each {
-//     def taskPostfix = it.key
-//     def profileMode = it.value
-//     tasks.whenTaskAdded { task ->
-//         if (task.name == "javaPreCompile$taskPostfix") {
-//             task.dependsOn "cargoBuild$taskPostfix"
-//         }
-//     }
-//     tasks.register("cargoBuild$taskPostfix", Exec) {
-//         workingDir "../../rust"
-//         environment ANDROID_NDK_HOME: "$ANDROID_NDK"
-//         commandLine 'cargo', 'ndk',
-//                 '--platform', '24',
-//                 // the 2 ABIs below are used by real Android devices
-//                 '-t', 'armeabi-v7a',
-//                 '-t', 'arm64-v8a',
-//                 // the below 2 ABIs are usually used for Android simulators,
-//                 // add or remove these ABIs as needed.
-//                 // '-t', 'x86',
-//                 // '-t', 'x86_64',
-//                 '-o', '../android/app/src/main/jniLibs', 'build'
-//         if (profileMode != null) {
-//             args profileMode
-//         }
-//     }
-// }

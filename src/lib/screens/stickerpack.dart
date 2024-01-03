@@ -42,11 +42,13 @@ class _StickerPackState extends State<StickerPack> {
                     'Deleting this sticker pack will remove all the stickers associated with it. Do you want to proceed?'),
                 actions: [
                   TextButton(
-                      onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Cancel')),
                   TextButton(
                       onPressed: () => Navigator.pop(ctx, true),
-                      child:
-                          Text('Delete', style: TextStyle(color: Theme.of(ctx).colorScheme.error)))
+                      child: Text('Delete',
+                          style: TextStyle(
+                              color: Theme.of(ctx).colorScheme.error)))
                 ]));
     if (!(delete ?? false)) {
       return false;
@@ -64,7 +66,9 @@ class _StickerPackState extends State<StickerPack> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.stickerPack.name),
-        actions: [IconButton(onPressed: _delete, icon: const Icon(Icons.delete))],
+        actions: [
+          IconButton(onPressed: _delete, icon: const Icon(Icons.delete))
+        ],
       ),
       body: CustomScrollView(
         slivers: [
@@ -82,11 +86,18 @@ class _StickerPackState extends State<StickerPack> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-          backgroundColor: !isValidPack ? const Color.fromARGB(255, 120, 120, 120) : null,
-          foregroundColor: !isValidPack ? const Color.fromARGB(255, 70, 70, 70) : null,
-          onPressed: !isValidPack ? null : () => _addToWhatsApp(widget.stickerPack),
+          backgroundColor:
+              !isValidPack ? const Color.fromARGB(255, 120, 120, 120) : null,
+          foregroundColor:
+              !isValidPack ? const Color.fromARGB(255, 70, 70, 70) : null,
+          onPressed:
+              !isValidPack ? null : () => _addToWhatsApp(widget.stickerPack),
           label: const Row(
-            children: [Icon(Icons.add), SizedBox(width: 2), Text('Add to WhatsApp')],
+            children: [
+              Icon(Icons.add),
+              SizedBox(width: 2),
+              Text('Add to WhatsApp')
+            ],
           )),
     );
   }

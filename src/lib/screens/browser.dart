@@ -47,7 +47,8 @@ class _BrowserState extends State<Browser> {
     _searchController.addListener(() => setState(() {}));
     _notificationService.initialize();
     _scrollController.addListener(() async {
-      if (_scrollController.offset == _scrollController.position.maxScrollExtent) {
+      if (_scrollController.offset ==
+          _scrollController.position.maxScrollExtent) {
         await getEmotes();
       }
     });
@@ -126,35 +127,45 @@ class _BrowserState extends State<Browser> {
     showDialog(
         context: context,
         builder: (dialogContext) {
-          return AlertDialog(content: Image.network(emote.getMaxSizeUrl().toString()), actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Close')),
-            OutlinedButton(
-              child: const Text('Add'),
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                Navigator.of(dialogContext).push(PageRouteBuilder(
-                    opaque: false,
-                    pageBuilder: (BuildContext context, _, __) => EmoteEmojiPicker(emote, [
-                          EmoteEmojiAction(_addToExistingPackLabel, _createStickerAndAddToPack),
-                          EmoteEmojiAction(_createNewPackLabel, (ctx, emote, emojis) async {
-                            var stickerPack = await _emoteToStickerPack(emote, emojis);
-                            if (stickerPack == null) {
-                              return;
-                            }
-                            debugPrint(
-                                'sticker saved at ${(await WhatsApp.getStickerDirectory()).path}');
-                          }),
-                        ])));
-              },
-            ),
-          ]);
+          return AlertDialog(
+              content: Image.network(emote.getMaxSizeUrl().toString()),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text('Close')),
+                OutlinedButton(
+                  child: const Text('Add'),
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                    Navigator.of(dialogContext).push(PageRouteBuilder(
+                        opaque: false,
+                        pageBuilder: (BuildContext context, _, __) =>
+                            EmoteEmojiPicker(emote, [
+                              EmoteEmojiAction(_addToExistingPackLabel,
+                                  _createStickerAndAddToPack),
+                              EmoteEmojiAction(_createNewPackLabel,
+                                  (ctx, emote, emojis) async {
+                                var stickerPack =
+                                    await _emoteToStickerPack(emote, emojis);
+                                if (stickerPack == null) {
+                                  return;
+                                }
+                                debugPrint(
+                                    'sticker saved at ${(await WhatsApp.getStickerDirectory()).path}');
+                              }),
+                            ])));
+                  },
+                ),
+              ]);
         });
   }
 
-  Future<void> _createStickerAndAddToPack(BuildContext _, Emote emote, List<String> emojis) async {
+  Future<void> _createStickerAndAddToPack(
+      BuildContext _, Emote emote, List<String> emojis) async {
     //TODO: minor performance improvement if we download the full webp in the background here after returning whether
     //it is animated or not and then pass it when creating the Sticker
-    final emoteIsAnimated = await emote.host!.checkIfAnimated(emote.getMaxSizeFile());
+    final emoteIsAnimated =
+        await emote.host!.checkIfAnimated(emote.getMaxSizeFile());
     debugPrint('emote is animated: $emoteIsAnimated');
     if (!mounted) {
       return;
@@ -167,7 +178,8 @@ class _BrowserState extends State<Browser> {
                     Navigator.pop(ctx, pack);
                     return null;
                   },
-                  filter: (pack) => (pack.isAnimated ?? emoteIsAnimated) != emoteIsAnimated,
+                  filter: (pack) =>
+                      (pack.isAnimated ?? emoteIsAnimated) != emoteIsAnimated,
                 )));
     if (selectedPack != null) {
       debugPrint('selected stickerpack ${selectedPack.name}');
@@ -175,18 +187,21 @@ class _BrowserState extends State<Browser> {
       selectedPack.addSticker(sticker);
       selectedPack.isAnimated = emoteIsAnimated;
       selectedPack.save();
-      debugPrint('added sticker "${sticker.identifier}" to stickerpack "${selectedPack.name}"');
+      debugPrint(
+          'added sticker "${sticker.identifier}" to stickerpack "${selectedPack.name}"');
     }
   }
 
-  Future<StickerPack?> _emoteToStickerPack(Emote emote, List<String> emojis) async {
+  Future<StickerPack?> _emoteToStickerPack(
+      Emote emote, List<String> emojis) async {
     final settings = await SettingsManager.load();
     if (context.mounted) {
       final stickerPack = await showDialog<StickerPack>(
           context: context,
           builder: (dialogContext) {
             return CreateStickerPackDialog(
-                defaultName: emote.name, defaultPublisher: settings.defaultPublisher);
+                defaultName: emote.name,
+                defaultPublisher: settings.defaultPublisher);
           });
       if (stickerPack != null) {
         var sticker = await _emoteToSticker(emote, emojis);
@@ -204,8 +219,8 @@ class _BrowserState extends State<Browser> {
     try {
       //TODO: button to go to stickerpack
       final sticker = await Sticker.fromEmote(emote, emojis);
-      _messengerKey.currentState
-          ?.showSnackBar(SnackBar(content: Text('Done processing \'${emote.name}\'')));
+      _messengerKey.currentState?.showSnackBar(
+          SnackBar(content: Text('Done processing \'${emote.name}\'')));
       return sticker;
     } finally {
       await _notificationService.endProcessing(emote.id);
@@ -216,11 +231,12 @@ class _BrowserState extends State<Browser> {
     Navigator.push(context, MaterialPageRoute(builder: (ctx) {
       return StickerPacks(
         (pack) async {
-          var state = await Navigator.push<views.StickerPackState?>(
-              context, MaterialPageRoute(builder: (ctx) => views.StickerPack(pack)));
+          var state = await Navigator.push<views.StickerPackState?>(context,
+              MaterialPageRoute(builder: (ctx) => views.StickerPack(pack)));
           var isDeleted = state?.isDeleted ?? false;
           debugPrint('isDeleted: $isDeleted');
-          return StickerPackSelectedCallbackResult(reloadRequired: state?.isDeleted ?? false);
+          return StickerPackSelectedCallbackResult(
+              reloadRequired: state?.isDeleted ?? false);
         },
       );
     }));
@@ -243,7 +259,9 @@ class _BrowserState extends State<Browser> {
         child: Scaffold(
           appBar: AppBar(
             //TODO: implement willpopscope to go back to trending from search
-            title: _isSearchMode ? _createSearchField() : const Text('7TV for WhatsApp'),
+            title: _isSearchMode
+                ? _createSearchField()
+                : const Text('7TV for WhatsApp'),
             actions: !_isSearchMode
                 ? [
                     IconButton(
@@ -253,16 +271,20 @@ class _BrowserState extends State<Browser> {
                 : _searchController.text.isNotEmpty
                     ? [
                         IconButton(
-                            onPressed: () => setState(() => _searchController.text = ''),
+                            onPressed: () =>
+                                setState(() => _searchController.text = ''),
                             icon: const Icon(Icons.clear))
                       ]
                     : null,
             leading: _isSearchMode
-                ? IconButton(onPressed: goToTrending, icon: const Icon(Icons.arrow_back))
-                : IconButton(onPressed: goToStickerPacks, icon: const Icon(Icons.apps)),
+                ? IconButton(
+                    onPressed: goToTrending, icon: const Icon(Icons.arrow_back))
+                : IconButton(
+                    onPressed: goToStickerPacks, icon: const Icon(Icons.apps)),
           ),
           body: _isLoading
-              ? const Skeleton(gridDelegate: _gridDelegate, searchCunkSize: _chunkSize)
+              ? const Skeleton(
+                  gridDelegate: _gridDelegate, searchCunkSize: _chunkSize)
               : _loadedEmotes.isEmpty
                   ? const Center(
                       child: Text(
@@ -343,8 +365,8 @@ class Skeleton extends StatelessWidget {
                         margin: const EdgeInsets.all(3),
                         decoration: ShapeDecoration(
                             color: Colors.black,
-                            shape:
-                                RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)))),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(40)))),
                     childCount: _searchCunkSize))
           ],
           physics: const NeverScrollableScrollPhysics(),

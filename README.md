@@ -1,3 +1,7 @@
+This is an experimental branch. For some reason the current dev build of flutter_rust_bridge version 2 seems to be wayyy slower when processing emotes. Probably smart to wait for an official release of version 2.
+
+---
+
 # 7TV for WhatsApp
 
 Bring your favorite third-party twitch emotes directly to WhatsApp!
